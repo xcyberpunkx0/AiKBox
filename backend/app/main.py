@@ -66,11 +66,21 @@ async def log_requests(request: Request, call_next):
 app.add_middleware(CORSMiddleware, allow_origins=[FRONTEND_ORIGIN], allow_methods=["*"], allow_headers=["*"])
 
 
+# Pydantic's own wording for these ("relative URL without a base") means little to a user
+FRIENDLY_MESSAGES = {
+    "url_parsing": "Enter a full link, starting with http:// or https://",
+    "url_scheme": "Only http:// and https:// links are supported",
+}
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error(request: Request, exc: RequestValidationError):
     # loc looks like ("body", "url", "url") - the middle part is the union tag, so keep only the field name
     details = [
-        {"field": err["loc"][-1] if isinstance(err["loc"][-1], str) else "body", "message": err["msg"]}
+        {
+            "field": err["loc"][-1] if isinstance(err["loc"][-1], str) else "body",
+            "message": FRIENDLY_MESSAGES.get(err["type"], err["msg"]),
+        }
         for err in exc.errors()
     ]
     return error_response(422, "validation_error", "Request body is invalid", details)

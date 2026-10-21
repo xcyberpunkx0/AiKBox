@@ -259,3 +259,21 @@ Roughly in the order they'd hit:
    Chunks should record which model produced them so old ones can be re-embedded in the background.
 8. **Fetching arbitrary URLs** from the API server is a liability at scale (abuse, slow sites tying
    up workers). It belongs in an isolated worker with its own network rules.
+
+## What I'd change for production
+
+Beyond the scale fixes above:
+
+- **Auth and rate limiting** before anything else. Right now anyone who can reach the API can
+  ingest, and every ingest and query costs Gemini quota.
+- **Secrets** from a secret manager instead of a `.env` file, and a separate Gemini key per
+  environment.
+- **Metrics and alerts.** The JSON logs already carry request ids and durations. I'd ship them to
+  a log store and add metrics for ingest failures, Gemini latency and errors, and how often a
+  question gets the "couldn't find anything" answer (a rising rate means retrieval is getting
+  worse).
+- **Retrieval evals.** A small set of questions with known answers, run whenever the chunk size,
+  score cutoff, prompt or model changes. The 0.55 cutoff was tuned by hand on my own test data.
+- **Deployment.** Containers for the API and the worker, Postgres instead of a local SQLite file,
+  database migrations instead of `CREATE TABLE IF NOT EXISTS`, and backups.
+- **The DNS rebinding gap** in the URL fetcher, closed by connecting to the IP that was checked.
