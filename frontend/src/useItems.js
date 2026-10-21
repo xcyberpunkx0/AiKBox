@@ -31,6 +31,7 @@ export function useItems() {
   const addItem = useCallback(async (payload) => {
     const item = await ingest(payload);
     setItems((prev) => [item, ...prev]);
+    return item;
   }, []);
 
   return { items, error, addItem };
