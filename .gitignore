@@ -6,3 +6,6 @@ node_modules/
 dist/
 .pytest_cache/
 INTERVIEW_PREP.md
+.archify/
+.ua/
+assignment/
